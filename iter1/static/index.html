@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Face Recognition</title>
+</head>
+<body>
+    <h1>Face Recognition System</h1>
+    <video id="videoElement" width="640" height="480" autoplay></video>
+    <button onclick="startRecognition()">Start Recognition</button>
+    <button onclick="stopRecognition()">Stop Recognition</button>
+
+    <script>
+        let video = document.getElementById('videoElement');
+        let streamUrl = '/video_feed';
+        let streamActive = false;
+
+        function setupVideoStream() {
+            if (!streamActive) {
+                video.src = streamUrl;  // Start video feed from Flask
+                streamActive = true;
+            }
+        }
+
+        function startRecognition() {
+            fetch('/start_recognition', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Start Recognition:', data);
+                    if (data.status === 'started') {
+                        setupVideoStream(); // Start video feed
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+
+        function stopRecognition() {
+            fetch('/stop_recognition', { method: 'POST' })
+                .then(response => response.json())
+                .then(data => {
+                    console.log('Stop Recognition:', data);
+                    if (data.status === 'stopped') {
+                        video.srcObject = null; // Stop video feed
+                        streamActive = false;
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+        }
+    </script>
+</body>
+</html>
