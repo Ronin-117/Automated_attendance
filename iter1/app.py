@@ -1,4 +1,5 @@
-from flask import Flask, render_template, Response
+from flask import Flask, render_template, Response, send_file, jsonify
+import pandas as pd
 import cv2
 import face_recognition
 import numpy as np
@@ -90,6 +91,13 @@ def video_feed():
     print("Video feed route accessed.")
     return Response(generate_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
+@app.route('/get_csv')
+def get_csv():
+    # Path to your CSV file
+    file_path = 'Attendance.csv'
+    return send_file(file_path, mimetype='text/csv', as_attachment=False)
+
 
 
 if __name__ == '__main__':
