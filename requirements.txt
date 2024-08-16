@@ -1,0 +1,6 @@
+pandas
+flask
+face_recognition
+numpy
+pickle
+opencv-python
