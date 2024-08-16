@@ -44,4 +44,4 @@ Start the attendance system by running the following command:
 python app.py
 ```
 
-# The system should now be up and running. It will use the images in the `Training_images` folder to recognize faces and mark attendance.
+# You can use the attendance system via a website whose web-address will be displayed in the terminal once you run the app.py . It will use the images in the `Training_images` folder to recognize faces and mark attendance.
