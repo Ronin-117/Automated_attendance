@@ -1,0 +1,420 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Attendance Monitoring System</title>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:ital,wght@0,100;0,300;0,400;0,500;0,700;0,900;1,100;1,300;1,400;1,500;1,700;1,900&
+    family=Silkscreen:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+  </head>
+  <body>
+    <header>
+      <h1 class="title">ATTENDENCE MONITORING SYSTEM &#128203;</h1>
+    </header>
+
+    <div class="controls">
+      <div class="dropdowns">
+        <label for="year">Select Year:</label>
+        <select id="year">
+          <option value="1">2021-25</option>
+          <option value="2">2022-26</option>
+          <option value="3">2023-27</option>
+          <option value="4">2024-28</option>
+        </select>
+
+        <label for="department">Select Department:</label>
+        <select id="department">
+          <option value="cs">Computer Science</option>
+          <option value="ai">Artificial Intelligence</option>
+          <option value="eee">Electrical & Electronics Engineering</option>
+          <option value="mech">Mechanical Engineering</option>
+          <option value="ec">Electronics and Communication</option>
+          <option value="rb">Robotics and Automation</option>
+          <option value="civil">Civil Engineering</option>
+        </select>
+      </div>
+
+      <div class="buttons">
+        <div>
+          <button class="start" id="Start_b"><span>START</span></button>
+          <script>
+            document.getElementById('Start_b').addEventListener('click', () => {
+                fetch('/st_inf', {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Function executed successfully');
+                    } else {
+                        console.error('Function execution failed');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        </script>
+        </div>
+        <div>
+          <button class="stop" id="End_b"><span>STOP</span></button>
+          <script>
+            document.getElementById('End_b').addEventListener('click', () => {
+                fetch('/ed_inf', {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Function executed successfully');
+                    } else {
+                        console.error('Function execution failed');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        </script>
+        </div>
+        <div>
+          <button class="stop" id="clr_csv"><span>CLEAR</span></button>
+          <script>
+            document.getElementById('clr_csv').addEventListener('click', () => {
+                fetch('/clear_csv', {
+                    method: 'POST'
+                })
+                .then(response => {
+                    if (response.ok) {
+                        console.log('Function executed successfully');
+                    } else {
+                        console.error('Function execution failed');
+                    }
+                })
+                .catch(error => console.error('Error:', error));
+            });
+        </script>
+        </div>
+        
+        
+        
+      </div>
+    </div>
+
+    <div class="scrolling-section">
+      <table id="csvTable">
+        <thead>
+          <tr>
+              <!-- Headers will be populated here -->
+          </tr>
+      </thead>
+      <tbody>
+          <!-- Data will be populated here -->
+      </tbody>
+      </table>
+      <script>
+
+        function fetchCSV() {
+            fetch('/get_csv')
+                .then(response => response.text())
+                .then(data => {
+                    const rows = data.split('\n').filter(row => row);
+                    const table = document.getElementById('csvTable');
+                    const thead = table.querySelector('thead');
+                    const tbody = table.querySelector('tbody');
+                    
+                    // Clear existing table content
+                    thead.innerHTML = '';
+                    tbody.innerHTML = '';
+                    
+                    // Create table headers
+                    const headers = rows[0].split(',');
+                    let theadHtml = '<tr>';
+                    headers.forEach(header => {
+                        theadHtml += `<th>${header}</th>`;
+                    });
+                    theadHtml += '</tr>';
+                    thead.innerHTML = theadHtml;
+
+                    // Create table rows
+                    rows.slice(1).forEach(row => {
+                        const cells = row.split(',');
+                        let rowHtml = '<tr>';
+                        cells.forEach(cell => {
+                            rowHtml += `<td>${cell}</td>`;
+                        });
+                        rowHtml += '</tr>';
+                        tbody.innerHTML += rowHtml;
+                    });
+                })
+                .catch(error => console.error('Error fetching CSV:', error));
+        }
+
+        // Fetch CSV data every 5 seconds
+        setInterval(fetchCSV, 5000);
+        
+        // Initial fetch
+        fetchCSV();
+    </script>
+    </div>
+
+    <div class="floating-video">
+      <div class="video-preview">
+        <img src="{{ url_for('video_feed') }}"> 
+      </div>
+    </div>
+  </body>
+</html>
+<style>
+  .start,
+.start *,
+.start :after,
+.start :before,
+.start:after,
+.start:before {
+  border: 0 solid;
+  box-sizing: border-box;
+}
+.start {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: button;
+  background-color: #000;
+  background-image: none;
+  color: #fff;
+  cursor: pointer;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif,
+    Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  font-size: 100%;
+  font-weight: 900;
+  line-height: 1.5;
+  margin: 0;
+  -webkit-mask-image: -webkit-radial-gradient(#000, #fff);
+  padding: 0;
+  text-transform: uppercase;
+}
+.start:disabled {
+  cursor: default;
+}
+.start:-moz-focusring {
+  outline: auto;
+}
+.start svg {
+  display: block;
+  vertical-align: middle;
+}
+.start [hidden] {
+  display: none;
+}
+.start {
+  border-radius: 99rem;
+  border-width: 2px;
+  overflow: hidden;
+  padding: 0.8rem 3rem;
+  position: relative;
+}
+.start span {
+  mix-blend-mode: difference;
+}
+.start:before {
+  background: #fff;
+  content: "";
+  display: block;
+  height: 100%;
+  left: -100%;
+  position: absolute;
+  top: 0;
+  transform: skew(0deg) translateX(-20%);
+  transition: transform 0.2s ease;
+  width: 120%;
+}
+.start:hover:before {
+  transform: skew(45deg) translateX(75%);
+}
+
+.stop,
+.stop *,
+.stop :after,
+.stop :before,
+.stop:after,
+.stop:before {
+  border: 0 solid;
+  box-sizing: border-box;
+}
+.stop {
+  -webkit-tap-highlight-color: transparent;
+  -webkit-appearance: button;
+  background-color: #000;
+  background-image: none;
+  color: #fff;
+  cursor: pointer;
+  font-family: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
+    Segoe UI, Roboto, Helvetica Neue, Arial, Noto Sans, sans-serif,
+    Apple Color Emoji, Segoe UI Emoji, Segoe UI Symbol, Noto Color Emoji;
+  font-size: 100%;
+  font-weight: 900;
+  line-height: 1.5;
+  margin: 0;
+  -webkit-mask-image: -webkit-radial-gradient(#000, #fff);
+  padding: 0;
+  text-transform: uppercase;
+}
+.stop:disabled {
+  cursor: default;
+}
+.stop:-moz-focusring {
+  outline: auto;
+}
+.stop svg {
+  display: block;
+  vertical-align: middle;
+}
+.stop [hidden] {
+  display: none;
+}
+.stop {
+  border-radius: 99rem;
+  border-width: 2px;
+  overflow: hidden;
+  padding: 0.8rem 3rem;
+  position: relative;
+}
+.stop span {
+  mix-blend-mode: difference;
+}
+.stop:before {
+  background: #fff;
+  content: "";
+  display: block;
+  height: 100%;
+  left: -100%;
+  position: absolute;
+  top: 0;
+  transform: skew(0deg) translateX(-20%);
+  transition: transform 0.2s ease;
+  width: 120%;
+}
+.stop:hover:before {
+  transform: skew(45deg) translateX(75%);
+}
+
+body {
+  font-family: Arial, sans-serif;
+  margin: 0;
+  padding: 0;
+  background-color: #f4f4f4;
+  color: #333;
+}
+
+header {
+  background-color: #008081;
+  color: white;
+  padding: 10px 0;
+  text-align: center;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.title {
+  font-family: "Roboto", sans-serif;
+  font-weight: 500px;
+}
+.controls {
+  margin: 20px auto;
+  width: 80%;
+  max-width: 1000px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.dropdowns {
+  display: flex;
+  gap: 15px;
+}
+
+label {
+  margin-right: 5px;
+}
+
+select {
+  padding: 5px;
+  border: 1px solid #ccc;
+  border-radius: 5px;
+  background-color: #008081;
+  color: rgb(51, 51, 51);
+  font-size: 14px;
+}
+
+.buttons {
+  display: flex;
+  gap: 25px;
+  margin-left: 100px;
+}
+
+.btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 16px;
+  position: relative;
+  overflow: hidden;
+}
+
+.scrolling-section {
+  margin-left: 100px;
+
+  width: 100%;
+  max-width: 800px;
+  overflow-x: auto;
+  background-color: white;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  border-radius: 10px;
+  padding: 20px;
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 20px;
+}
+
+th,
+td {
+  text-align: left;
+  padding: 12px 15px;
+  border-bottom: 1px solid #ddd;
+}
+
+th {
+  background-color: #008081;
+  color: white;
+}
+
+tr:hover {
+  background-color: #f5f5f5;
+}
+
+.floating-video {
+  position: fixed;
+  right: 20px;
+  bottom: 20px;
+  width: 640px;
+  height: 340px;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
+  border-radius: 10px;
+  overflow: hidden;
+  background-color: #000;
+}
+
+.floating-video .video-preview {
+  width: 100%;
+  height: 200px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  color: white;
+  font-size: 18px;
+}
+
+</style>
