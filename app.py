@@ -67,7 +67,7 @@ def clear_attendance_file():
 
 
 # Load known face encodings and names
-def load_encodings(file_path='encoding_passport_size_large.pkl'):
+def load_encodings(file_path='encoding.pkl'):
     with open(file_path, 'rb') as f:
         encodings = pickle.load(f)
     print('Encodings loaded from', file_path)
