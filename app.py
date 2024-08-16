@@ -98,7 +98,7 @@ for cl in myList:
     images.append(curImg)
     classNames.append(os.path.splitext(cl)[0])
 
-loaded_encodings = load_encodings('encoding.pkl')
+loaded_encodings = load_encodings('encodings.pkl')
 
 do_inference=False
 
