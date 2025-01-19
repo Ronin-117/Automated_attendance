@@ -11,16 +11,20 @@ from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 from email.mime.base import MIMEBase
 from email import encoders
+import signal
+import sys
+import threading
 
 
 app = Flask(__name__)
 
 
-def send_email(subject= "Attendace", body= "Automated mail sending Attendance csv", to_email="##TARGET##@gmail.com",attachment_path="Attendance.csv"):#Modify you target email address 
+def send_email(subject="Attendace", body="Automated mail sending Attendance csv", to_email="nj6604053@gmail.com",
+               attachment_path="Attendance.csv"):  # Modify you target email address
     try:
         # Your Gmail account credentials
-        from_email = "##YOUR#MAIL##@gmail.com" #enter your email
-        password = "YOUR DEVICE PASSWORD" #enter you device password (not the email password)
+        from_email = "##YOUR#MAIL##"  # enter your email
+        password = "##YOU#DEVICE#PASSWORD##"  # enter you device password (not the email password)
 
         # Set up the server
         server = smtplib.SMTP('smtp.gmail.com', 587)
@@ -67,12 +71,11 @@ def clear_attendance_file():
 
 
 # Load known face encodings and names
-def load_encodings(file_path='encoding.pkl'):
+def load_encodings(file_path='encoding_passport_size_large.pkl'):
     with open(file_path, 'rb') as f:
         encodings = pickle.load(f)
     print('Encodings loaded from', file_path)
     return encodings
-
 
 
 def markAttendance(name):
@@ -88,6 +91,7 @@ def markAttendance(name):
             dtString = now.strftime('%H:%M:%S')
             f.write(f'{name},{dtString}\n')
 
+
 # Load face encodings and names
 path = 'Training_images'
 images = []
@@ -98,57 +102,78 @@ for cl in myList:
     images.append(curImg)
     classNames.append(os.path.splitext(cl)[0])
 
-loaded_encodings = load_encodings('encodings.pkl')
+loaded_encodings = load_encodings('encoding_passport_size_large.pkl')
 
-do_inference=False
+do_inference = False
+running = True
+prev_face_data = [] #Declare global
 
 def generate_frames():
-    global do_inference
+    global do_inference, running, prev_face_data
     cap = cv2.VideoCapture(0)
     if not cap.isOpened():
         print("Error: Could not open video capture.")
         return
-    while True:
+
+    frame_count = 0
+    process_every_n_frames = 3
+
+
+    while running:
         success, frame = cap.read()
         if not success:
             print("Error: Could not read frame.")
             break
-        else:
-            imgS = cv2.resize(frame, (0, 0), None, 0.25, 0.25)
+
+        frame_count += 1
+        display_frame = frame.copy()
+
+        if do_inference and frame_count % process_every_n_frames == 0:
+            imgS = cv2.resize(display_frame, (0, 0), None, 0.25, 0.25, interpolation=cv2.INTER_AREA)
             imgS = cv2.cvtColor(imgS, cv2.COLOR_BGR2RGB)
 
-            if do_inference:
-                facesCurFrame = face_recognition.face_locations(imgS, model='hog')
-                encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame, num_jitters=2, model='large')
+            facesCurFrame = face_recognition.face_locations(imgS, model='hog')
+            encodesCurFrame = face_recognition.face_encodings(imgS, facesCurFrame, num_jitters=2, model='large')
 
-                for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
-                    matches = face_recognition.compare_faces(loaded_encodings, encodeFace, tolerance=0.5)
-                    faceDis = face_recognition.face_distance(loaded_encodings, encodeFace)
-                    matchIndex = np.argmin(faceDis)
+            prev_face_data = []
+            for encodeFace, faceLoc in zip(encodesCurFrame, facesCurFrame):
+                matches = face_recognition.compare_faces(loaded_encodings, encodeFace, tolerance=0.5)
+                faceDis = face_recognition.face_distance(loaded_encodings, encodeFace)
+                matchIndex = np.argmin(faceDis)
+                if matches[matchIndex]:
+                    name = classNames[matchIndex].upper()
+                    y1, x2, y2, x1 = faceLoc
+                    y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
+                    prev_face_data.append((name, (x1, y1, x2, y2)))
+                    markAttendance(name)  # Mark attendance here as it is only done when a face is detected.
 
-                    if matches[matchIndex]:
-                        name = classNames[matchIndex].upper()
-                        y1, x2, y2, x1 = faceLoc
-                        y1, x2, y2, x1 = y1 * 4, x2 * 4, y2 * 4, x1 * 4
-                        cv2.rectangle(frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
-                        cv2.rectangle(frame, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
-                        cv2.putText(frame, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
-                        markAttendance(name)
+        for name, (x1, y1, x2, y2) in prev_face_data:
+            cv2.rectangle(display_frame, (x1, y1), (x2, y2), (0, 255, 0), 2)
+            cv2.rectangle(display_frame, (x1, y2 - 35), (x2, y2), (0, 255, 0), cv2.FILLED)
+            cv2.putText(display_frame, name, (x1 + 6, y2 - 6), cv2.FONT_HERSHEY_COMPLEX, 1, (255, 255, 255), 2)
 
-            # Encode the frame in JPEG format
-            ret, buffer = cv2.imencode('.jpg', frame)
-            if not ret:
-                print("Error: Could not encode frame.")
-                continue
-            frame = buffer.tobytes()
-            # Yield the frame in the correct format for streaming
-            yield (b'--frame\r\n'
+
+        ret, buffer = cv2.imencode('.jpg', display_frame)
+        if not ret:
+            print("Error: Could not encode frame.")
+            continue
+        frame = buffer.tobytes()
+        yield (b'--frame\r\n'
                    b'Content-Type: image/jpeg\r\n\r\n' + frame + b'\r\n')
-            
+        if cv2.waitKey(1) & 0xFF == ord('q'):
+           
+           running = False # break the loop when q is pressed
+           prev_face_data = []  #clear prev face data.
+    
+    # clear the `prev_face_data` when the loop ends
+    cap.release()
+
+
 @app.route('/')
 def index():
     print("Index route accessed.")
     return render_template('main.html')
+
 
 @app.route('/video_feed')
 def video_feed():
@@ -156,29 +181,44 @@ def video_feed():
     return Response(generate_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
 
+
 @app.route('/get_csv')
 def get_csv():
     # Path to your CSV file
     file_path = 'Attendance.csv'
     return send_file(file_path, mimetype='text/csv', as_attachment=False)
 
+
 @app.route('/clear_csv', methods=['POST'])
 def clr_csv():
     clear_attendance_file()
     return '', 204
 
+
 @app.route('/st_inf', methods=['POST'])
 def start_inf():
     global do_inference
-    do_inference=True
+    do_inference = True
     return '', 204
+
 
 @app.route('/ed_inf', methods=['POST'])
 def end_inf():
-    global do_inference
-    do_inference=False
+    global do_inference, prev_face_data
+    do_inference = False
+    prev_face_data = [] #Clear the prev_face data to clear rectangele
     send_email()
     return '', 204
 
+
+def signal_handler(sig, frame):
+    print('Ctrl+C pressed, exiting...')
+    global running, prev_face_data
+    running = False
+    prev_face_data = []
+    sys.exit(0)
+
+
 if __name__ == '__main__':
+    signal.signal(signal.SIGINT, signal_handler)
     app.run(host='0.0.0.0', port=5000, debug=True)
