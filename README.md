@@ -1,5 +1,7 @@
 # Automated Attendance System
 
+![Demo Animation](https://raw.githubusercontent.com/Ronin-117/Automated_attendance/main/GIF.gif)
+
 # Description
 This repository contains an automated attendance system that uses facial recognition technology to identify and track attendance. The system is designed to be easy to set up and run, requiring only a few dependencies and straightforward configuration steps.
 
